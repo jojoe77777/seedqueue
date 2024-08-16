@@ -169,8 +169,8 @@ public class SeedQueueWallScreen extends Screen {
 
         if (this.cursor != null) {
             SeedQueueProfiler.swap("cursor");
-            int width = this.cursor.getWidth();
-            int height = this.cursor.getHeight();
+            int width = (int) ((double) this.cursor.getWidth() / client.getWindow().getScaleFactor());
+            int height = (int) ((double) this.cursor.getHeight() / client.getWindow().getScaleFactor());
             this.drawAnimatedTexture(this.cursor, matrices, mouseX - width / 2, mouseY - height / 2, width, height);
         }
 
