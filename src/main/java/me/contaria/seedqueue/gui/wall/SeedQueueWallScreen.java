@@ -44,6 +44,7 @@ public class SeedQueueWallScreen extends Screen {
     public static final Identifier CUSTOM_LAYOUT = new Identifier("seedqueue", "wall/custom_layout.json");
     private static final Identifier WALL_BACKGROUND = new Identifier("seedqueue", "textures/gui/wall/background.png");
     private static final Identifier WALL_OVERLAY = new Identifier("seedqueue", "textures/gui/wall/overlay.png");
+    private static final Identifier WALL_CURSOR = new Identifier("seedqueue", "textures/gui/wall/cursor.png");
     private static final Identifier INSTANCE_BACKGROUND = new Identifier("seedqueue", "textures/gui/wall/instance_background.png");
 
     private final Screen createWorldScreen;
@@ -69,6 +70,8 @@ public class SeedQueueWallScreen extends Screen {
     private AnimatedTexture overlay;
     @Nullable
     private AnimatedTexture instanceBackground;
+    @Nullable
+    private AnimatedTexture cursor;
 
     private int ticks;
 
@@ -101,6 +104,7 @@ public class SeedQueueWallScreen extends Screen {
         this.lockTextures = LockTexture.createLockTextures();
         this.background = AnimatedTexture.of(WALL_BACKGROUND);
         this.overlay = AnimatedTexture.of(WALL_OVERLAY);
+        this.cursor = AnimatedTexture.of(WALL_CURSOR);
         this.instanceBackground = AnimatedTexture.of(INSTANCE_BACKGROUND);
     }
 
@@ -162,6 +166,13 @@ public class SeedQueueWallScreen extends Screen {
         SeedQueueProfiler.swap("reset");
         this.resetViewport();
         this.loadPreviewSettings(this.settingsCache, 0);
+
+        if (this.cursor != null) {
+            SeedQueueProfiler.swap("cursor");
+            int width = this.cursor.getWidth();
+            int height = this.cursor.getHeight();
+            this.drawAnimatedTexture(this.cursor, matrices, mouseX - width / 2, mouseY - height / 2, width, height);
+        }
 
         if (this.debugHud != null) {
             SeedQueueProfiler.swap("fps_graph");
