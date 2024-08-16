@@ -48,11 +48,11 @@ public class AnimatedTexture {
         return this.animation != null ? this.animation.getFrameIndexSet().size() : 1;
     }
 
-    public int getWidth(){
+    public int getWidth() {
         return this.width;
     }
 
-    public int getHeight(){
+    public int getHeight() {
         return this.height;
     }
 
