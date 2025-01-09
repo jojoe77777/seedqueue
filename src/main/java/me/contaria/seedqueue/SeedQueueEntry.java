@@ -52,7 +52,7 @@ public class SeedQueueEntry {
     private volatile boolean loaded;
     private volatile boolean discarded;
     private volatile boolean dying;
-    private volatile boolean wasDead;
+    private volatile boolean wasRevived;
     private volatile boolean maxWorldGenerationReached;
 
     /**
@@ -373,13 +373,13 @@ public class SeedQueueEntry {
 
     public void setDying(boolean dying) {
         this.dying = dying;
-        if(dying){
-            this.wasDead = true;
+        if(!dying){
+            this.wasRevived = true;
         }
     }
 
-    public boolean wasDead() {
-        return this.wasDead;
+    public boolean wasRevived() {
+        return this.wasRevived;
     }
 
     public boolean isDying() {

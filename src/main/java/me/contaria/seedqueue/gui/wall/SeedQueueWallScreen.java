@@ -222,7 +222,7 @@ public class SeedQueueWallScreen extends Screen {
             SeedQueueProfiler.swap("lock");
             this.drawLock(matrices, pos, instance.getLockTexture());
         }
-        if (instance.getSeedQueueEntry().wasDead() && this.revivedTexture != null) {
+        if (instance.getSeedQueueEntry().wasRevived() && this.revivedTexture != null) {
             SeedQueueProfiler.swap("revived");
             this.drawLock(matrices, pos, this.revivedTexture);
         }
