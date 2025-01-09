@@ -732,11 +732,16 @@ public class SeedQueueWallScreen extends Screen {
         }
 
         SeedQueueProfiler.push("reset_instance");
-        SeedQueue.markDying(instance.getSeedQueueEntry());
-        this.dyingPreviews.add(instance);
-        if(this.dyingPreviews.size() > SeedQueue.config.cemeterySize) {
-            SeedQueuePreview oldest = this.dyingPreviews.remove(0);
-            SeedQueue.discard(oldest.getSeedQueueEntry());
+        int cemeterySize = SeedQueue.config.cemeterySize;
+        if(cemeterySize > 0){
+            SeedQueue.markDying(instance.getSeedQueueEntry());
+            this.dyingPreviews.add(instance);
+            if(this.dyingPreviews.size() > cemeterySize) {
+                SeedQueuePreview oldest = this.dyingPreviews.remove(0);
+                SeedQueue.discard(oldest.getSeedQueueEntry());
+            }
+        } else {
+            SeedQueue.discard(instance.getSeedQueueEntry());
         }
 
         this.scheduledEntries.remove(instance.getSeedQueueEntry());

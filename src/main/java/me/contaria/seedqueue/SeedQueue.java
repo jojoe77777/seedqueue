@@ -144,7 +144,7 @@ public class SeedQueue implements ClientModInitializer {
      * @see SeedQueueConfig#maxCapacity
      */
     public static boolean isFull() {
-        return SEED_QUEUE.size() >= config.maxCapacity + config.cemeterySize;
+        return SEED_QUEUE.size() >= config.maxCapacity;
     }
 
     /**
