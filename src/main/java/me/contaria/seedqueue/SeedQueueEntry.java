@@ -51,6 +51,8 @@ public class SeedQueueEntry {
     private volatile boolean locked;
     private volatile boolean loaded;
     private volatile boolean discarded;
+    private volatile boolean dying;
+    private volatile boolean wasDead;
     private volatile boolean maxWorldGenerationReached;
 
     /**
@@ -367,6 +369,21 @@ public class SeedQueueEntry {
      */
     public boolean isDiscarded() {
         return this.discarded;
+    }
+
+    public void setDying(boolean dying) {
+        this.dying = dying;
+        if(dying){
+            this.wasDead = true;
+        }
+    }
+
+    public boolean wasDead() {
+        return this.wasDead;
+    }
+
+    public boolean isDying() {
+        return this.dying;
     }
 
     /**

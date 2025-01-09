@@ -36,6 +36,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -60,6 +61,7 @@ public class SeedQueueWallScreen extends Screen {
     @Nullable
     private List<SeedQueuePreview> lockedPreviews;
     private List<SeedQueuePreview> preparingPreviews;
+    private List<SeedQueuePreview> dyingPreviews;
 
     private final Set<Integer> blockedMainPositions = new HashSet<>();
 
@@ -73,6 +75,8 @@ public class SeedQueueWallScreen extends Screen {
     private AnimatedTexture overlay;
     @Nullable
     private AnimatedTexture instanceBackground;
+    @Nullable
+    private LockTexture revivedTexture;
 
     private int ticks;
 
@@ -93,6 +97,7 @@ public class SeedQueueWallScreen extends Screen {
         this.createWorldScreen = createWorldScreen;
         this.debugHud = SeedQueue.config.showDebugMenu ? new DebugHud(MinecraftClient.getInstance()) : null;
         this.preparingPreviews = new ArrayList<>();
+        this.dyingPreviews = new ArrayList<>();
         this.lastSettingsCache = this.settingsCache = SeedQueueSettingsCache.create();
     }
 
@@ -103,10 +108,16 @@ public class SeedQueueWallScreen extends Screen {
         this.mainPreviews = new SeedQueuePreview[this.layout.main.size()];
         this.lockedPreviews = this.layout.locked != null ? new ArrayList<>() : null;
         this.preparingPreviews = new ArrayList<>();
+        this.dyingPreviews = new ArrayList<>();
         this.lockTextures = LockTexture.createLockTextures();
         this.background = AnimatedTexture.of(WALL_BACKGROUND);
         this.overlay = AnimatedTexture.of(WALL_OVERLAY);
         this.instanceBackground = AnimatedTexture.of(INSTANCE_BACKGROUND);
+        try {
+            this.revivedTexture = new LockTexture(new Identifier("seedqueue", "textures/gui/wall/revived.png"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected LockTexture getLockTexture() {
@@ -210,6 +221,10 @@ public class SeedQueueWallScreen extends Screen {
         if (instance.getSeedQueueEntry().isLocked()) {
             SeedQueueProfiler.swap("lock");
             this.drawLock(matrices, pos, instance.getLockTexture());
+        }
+        if (instance.getSeedQueueEntry().wasDead() && this.revivedTexture != null) {
+            SeedQueueProfiler.swap("revived");
+            this.drawLock(matrices, pos, this.revivedTexture);
         }
         SeedQueueProfiler.pop();
     }
@@ -428,11 +443,26 @@ public class SeedQueueWallScreen extends Screen {
         for (SeedQueuePreview instance: this.getInstances()) {
             entries.remove(instance.getSeedQueueEntry());
         }
+        for (SeedQueuePreview dyingInst : this.dyingPreviews) {
+            entries.remove(dyingInst.getSeedQueueEntry());
+        }
         entries.removeIf(entry -> entry.getWorldGenerationProgressTracker() == null);
         if (SeedQueue.config.waitForPreviewSetup) {
             entries.removeIf(entry -> !entry.hasWorldPreview());
         }
         return entries;
+    }
+
+    private void revive(){
+        if(this.dyingPreviews.isEmpty()){
+            return;
+        }
+        this.playSound(SeedQueueSounds.REVIVE);
+        for(SeedQueuePreview instance : this.dyingPreviews){
+            instance.getSeedQueueEntry().setDying(false);
+        }
+        this.dyingPreviews.clear();
+        SeedQueue.ping();
     }
 
     private void loadPreviewSettings(SeedQueuePreview instance) {
@@ -483,6 +513,9 @@ public class SeedQueueWallScreen extends Screen {
         }
         if (SeedQueueKeyBindings.scheduleAll.matchesMouse(button)) {
             this.scheduleAll();
+        }
+        if (SeedQueueKeyBindings.revive.matchesMouse(button)) {
+            this.revive();
         }
 
         SeedQueuePreview instance = this.getInstance(mouseX, mouseY);
@@ -553,6 +586,9 @@ public class SeedQueueWallScreen extends Screen {
         }
         if (SeedQueueKeyBindings.scheduleAll.matchesKey(keyCode, scanCode)) {
             this.scheduleAll();
+        }
+        if (SeedQueueKeyBindings.revive.matchesKey(keyCode, scanCode)) {
+            this.revive();
         }
 
         SeedQueuePreview instance = this.getInstance(mouseX, mouseY);
@@ -696,7 +732,12 @@ public class SeedQueueWallScreen extends Screen {
         }
 
         SeedQueueProfiler.push("reset_instance");
-        SeedQueue.discard(instance.getSeedQueueEntry());
+        SeedQueue.markDying(instance.getSeedQueueEntry());
+        this.dyingPreviews.add(instance);
+        if(this.dyingPreviews.size() > SeedQueue.config.cemeterySize) {
+            SeedQueuePreview oldest = this.dyingPreviews.remove(0);
+            SeedQueue.discard(oldest.getSeedQueueEntry());
+        }
 
         this.scheduledEntries.remove(instance.getSeedQueueEntry());
 

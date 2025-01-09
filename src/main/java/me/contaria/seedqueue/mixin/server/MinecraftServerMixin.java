@@ -187,6 +187,9 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
         if (entry == null || entry.isLoaded() || entry.isDiscarded()) {
             return false;
         }
+        if(entry.isDying()){
+            return true;
+        }
         if (this.pauseScheduled || entry.isReady()) {
             return true;
         }

@@ -52,6 +52,10 @@ public class SeedQueueConfig implements SpeedrunConfig {
 
     @Config.Category("queue")
     @Config.Numbers.Whole.Bounds(min = 0, max = 30)
+    public int cemeterySize = 6;
+
+    @Config.Category("queue")
+    @Config.Numbers.Whole.Bounds(min = 0, max = 30)
     public int maxConcurrently = 1;
 
     @Config.Category("queue")
@@ -186,7 +190,8 @@ public class SeedQueueConfig implements SpeedrunConfig {
             SeedQueueKeyBindings.scheduleJoin,
             SeedQueueKeyBindings.scheduleAll,
             SeedQueueKeyBindings.startBenchmark,
-            SeedQueueKeyBindings.cancelBenchmark
+            SeedQueueKeyBindings.cancelBenchmark,
+            SeedQueueKeyBindings.revive
     };
 
     {

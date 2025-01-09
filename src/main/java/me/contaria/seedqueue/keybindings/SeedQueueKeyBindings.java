@@ -15,4 +15,5 @@ public class SeedQueueKeyBindings {
     public static final SeedQueueMultiKeyBinding scheduleAll = new SeedQueueMultiKeyBinding("seedqueue.key.scheduleAll");
     public static final SeedQueueMultiKeyBinding startBenchmark = new SeedQueueMultiKeyBinding("seedqueue.key.startBenchmark");
     public static final SeedQueueMultiKeyBinding cancelBenchmark = new SeedQueueMultiKeyBinding("seedqueue.key.cancelBenchmark");
+    public static final SeedQueueMultiKeyBinding revive = new SeedQueueMultiKeyBinding("seedqueue.key.revive");
 }

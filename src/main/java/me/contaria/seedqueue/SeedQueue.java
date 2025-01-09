@@ -110,6 +110,13 @@ public class SeedQueue implements ClientModInitializer {
         ping();
     }
 
+    public static void markDying(SeedQueueEntry entry) {
+        entry.setDying(true);
+        entry.discardFrameBuffer();
+        entry.mainPosition = -1;
+        ping();
+    }
+
     /**
      * Discards the given {@link SeedQueueEntry} and removes it from the queue.
      */
@@ -137,7 +144,7 @@ public class SeedQueue implements ClientModInitializer {
      * @see SeedQueueConfig#maxCapacity
      */
     public static boolean isFull() {
-        return SEED_QUEUE.size() >= config.maxCapacity;
+        return SEED_QUEUE.size() >= config.maxCapacity + config.cemeterySize;
     }
 
     /**

@@ -43,6 +43,7 @@
   "seedqueue.key.scheduleAll": "Schedule All",
   "seedqueue.key.startBenchmark": "Start Benchmark",
   "seedqueue.key.cancelBenchmark": "Stop Benchmark",
+  "seedqueue.key.revive": "Revive Dying Seeds",
 
   "speedrunapi.config.seedqueue.category.queue": "Queue Settings",
   "speedrunapi.config.seedqueue.category.chunkmap": "Chunkmap Settings",
@@ -56,6 +57,8 @@
 
   "speedrunapi.config.seedqueue.option.maxCapacity": "Max Queued Seeds",
   "speedrunapi.config.seedqueue.option.maxCapacity.description": "Maximum number of seeds that can be queued.\nOnce the limit is reached, no more seeds will be queued until the current seed has been reset.",
+  "speedrunapi.config.seedqueue.option.cemeterySize": "Cemetery Size",
+  "speedrunapi.config.seedqueue.option.cemeterySize.description": "Maximum number of seeds to keep recoverable when resetting.",
   "speedrunapi.config.seedqueue.option.maxConcurrently": "Max Generating Seeds",
   "speedrunapi.config.seedqueue.option.maxConcurrently.description": "Maximum number of seeds that can be generating at the same time.",
   "speedrunapi.config.seedqueue.option.maxConcurrently_onWall": "Max Generating Seeds (Wall)",
