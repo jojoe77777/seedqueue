@@ -187,7 +187,6 @@ public class SeedQueueWallScreen extends Screen {
             ((DebugHudAccessor) this.debugHud).seedQueue$drawMetricsData(matrices, this.client.getMetricsData(), 0, this.width / 2, true);
         }
 
-        this.drawTextWithShadow(matrices, this.textRenderer, StringRenderable.plain(this.dyingPreviews.size() + ""), 2, 2, 0xFFFFFF);
         SeedQueueProfiler.pop();
     }
 
