@@ -52,7 +52,6 @@ public class SeedQueueEntry {
     private volatile boolean loaded;
     private volatile boolean discarded;
     private volatile boolean dying;
-    private volatile boolean wasRevived;
     private volatile boolean maxWorldGenerationReached;
 
     /**
@@ -338,6 +337,20 @@ public class SeedQueueEntry {
     }
 
     /**
+     * Unlocks an entry
+     *
+     * @return True if the entry was locked before.
+     */
+    public boolean unlock() {
+        if (this.locked) {
+            this.locked = false;
+            SeedQueue.ping();
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * @see SeedQueueEntry#load
      */
     public boolean isLoaded() {
@@ -364,26 +377,19 @@ public class SeedQueueEntry {
         }
     }
 
+    public boolean isDying() {
+        return this.dying;
+    }
+
+    public void setDying(boolean dying) {
+        this.dying = dying;
+    }
+
     /**
      * @see SeedQueueEntry#discard
      */
     public boolean isDiscarded() {
         return this.discarded;
-    }
-
-    public void setDying(boolean dying) {
-        this.dying = dying;
-        if(!dying){
-            this.wasRevived = true;
-        }
-    }
-
-    public boolean wasRevived() {
-        return this.wasRevived;
-    }
-
-    public boolean isDying() {
-        return this.dying;
     }
 
     /**

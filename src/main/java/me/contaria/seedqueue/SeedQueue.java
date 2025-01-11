@@ -110,13 +110,6 @@ public class SeedQueue implements ClientModInitializer {
         ping();
     }
 
-    public static void markDying(SeedQueueEntry entry) {
-        entry.setDying(true);
-        entry.discardFrameBuffer();
-        entry.mainPosition = -1;
-        ping();
-    }
-
     /**
      * Discards the given {@link SeedQueueEntry} and removes it from the queue.
      */

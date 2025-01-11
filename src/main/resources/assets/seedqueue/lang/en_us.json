@@ -43,7 +43,7 @@
   "seedqueue.key.scheduleAll": "Schedule All",
   "seedqueue.key.startBenchmark": "Start Benchmark",
   "seedqueue.key.cancelBenchmark": "Stop Benchmark",
-  "seedqueue.key.revive": "Revive Dying Seeds",
+  "seedqueue.key.toggleCemetery": "Toggle Cemetery",
 
   "speedrunapi.config.seedqueue.category.queue": "Queue Settings",
   "speedrunapi.config.seedqueue.category.chunkmap": "Chunkmap Settings",

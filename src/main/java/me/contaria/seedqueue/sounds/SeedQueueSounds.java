@@ -22,7 +22,6 @@ public class SeedQueueSounds {
     public static final SoundEvent FINISH_BENCHMARK = register("finish_benchmark");
     public static final SoundEvent OPEN_WALL = register("open_wall");
     public static final SoundEvent BYPASS_WALL = register("bypass_wall");
-    public static final SoundEvent REVIVE = register("revive");
 
     public static void init() {
     }

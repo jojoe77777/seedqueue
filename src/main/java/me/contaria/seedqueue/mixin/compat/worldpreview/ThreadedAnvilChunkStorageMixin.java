@@ -153,7 +153,7 @@ public abstract class ThreadedAnvilChunkStorageMixin {
 
     @Unique
     private Optional<WorldPreviewProperties> getWorldPreviewProperties() {
-        return ((SQMinecraftServer) this.world.getServer()).seedQueue$getEntry().filter(entry -> !(SeedQueue.config.freezeLockedPreviews && entry.isLocked())).map(SeedQueueEntry::getWorldPreviewProperties);
+        return ((SQMinecraftServer) this.world.getServer()).seedQueue$getEntry().filter(entry -> !entry.isDying() && !(SeedQueue.config.freezeLockedPreviews && entry.isLocked())).map(SeedQueueEntry::getWorldPreviewProperties);
     }
 
     @Unique
