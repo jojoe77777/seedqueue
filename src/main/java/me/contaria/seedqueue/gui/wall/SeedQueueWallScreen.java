@@ -114,6 +114,12 @@ public class SeedQueueWallScreen extends Screen {
         this.overlay = AnimatedTexture.of(WALL_OVERLAY);
         this.instanceBackground = AnimatedTexture.of(INSTANCE_BACKGROUND);
         this.cemeteryVisible = this.layout.autoOpenCemetery;
+
+        for (SeedQueuePreview preview : this.dyingPreviews) {
+            if(!preview.getSeedQueueEntry().isDiscarded()){
+                SeedQueue.discard(preview.getSeedQueueEntry());
+            }
+        }
     }
 
     protected LockTexture getLockTexture() {
