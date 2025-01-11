@@ -803,6 +803,8 @@ public class SeedQueueWallScreen extends Screen {
                 SeedQueue.discard(oldest.getSeedQueueEntry());
             }
             SeedQueue.ping();
+        } else {
+            SeedQueue.discard(entry);
         }
 
         this.scheduledEntries.remove(entry);
