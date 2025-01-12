@@ -984,6 +984,7 @@ public class SeedQueueWallScreen extends Screen {
             for (SeedQueuePreview instance : this.getInstances()) {
                 this.removePreview(instance);
             }
+            this.dyingPreviews.clear();
         }
     }
 
