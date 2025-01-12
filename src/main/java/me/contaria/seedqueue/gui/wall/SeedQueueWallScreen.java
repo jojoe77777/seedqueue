@@ -31,7 +31,6 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.StringRenderable;
 import net.minecraft.util.Identifier;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
@@ -108,18 +107,17 @@ public class SeedQueueWallScreen extends Screen {
         this.mainPreviews = new SeedQueuePreview[this.layout.main.size()];
         this.lockedPreviews = this.layout.locked != null ? new ArrayList<>() : null;
         this.preparingPreviews = new ArrayList<>();
+        for (SeedQueuePreview preview : this.dyingPreviews) {
+            if(!preview.getSeedQueueEntry().isDiscarded()){
+                SeedQueue.discard(preview.getSeedQueueEntry());
+            }
+        }
         this.dyingPreviews = new ArrayList<>();
         this.lockTextures = LockTexture.createLockTextures();
         this.background = AnimatedTexture.of(WALL_BACKGROUND);
         this.overlay = AnimatedTexture.of(WALL_OVERLAY);
         this.instanceBackground = AnimatedTexture.of(INSTANCE_BACKGROUND);
         this.cemeteryVisible = this.layout.autoOpenCemetery;
-
-        for (SeedQueuePreview preview : this.dyingPreviews) {
-            if(!preview.getSeedQueueEntry().isDiscarded()){
-                SeedQueue.discard(preview.getSeedQueueEntry());
-            }
-        }
     }
 
     protected LockTexture getLockTexture() {
@@ -792,7 +790,7 @@ public class SeedQueueWallScreen extends Screen {
 
         SeedQueueProfiler.push("reset_instance");
         SeedQueueEntry entry = instance.getSeedQueueEntry();
-        int cemeterySize = SeedQueue.config.cemeterySize;
+        int cemeterySize = this.layout.cemetery != null ? this.layout.cemetery.size() : 0;
         if(cemeterySize > 0){
             entry.setDying(true);
             entry.setWorldPreviewProperties(null);
