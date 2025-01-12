@@ -1099,5 +1099,6 @@ public class SeedQueueWallScreen extends Screen {
                 SeedQueue.discard(preview.getSeedQueueEntry());
             }
         }
+        this.dyingPreviews.clear();
     }
 }
