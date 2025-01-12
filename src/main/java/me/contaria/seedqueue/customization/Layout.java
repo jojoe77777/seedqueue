@@ -84,8 +84,8 @@ public class Layout {
                 jsonObject.has("cemetery") ? Group.fromJson(jsonObject.getAsJsonObject("cemetery")) : null,
                 jsonObject.has("replaceLockedInstances") && jsonObject.get("replaceLockedInstances").getAsBoolean(),
                 jsonObject.has("mainFillOrder") ? MainFillOrder.valueOf(jsonObject.get("mainFillOrder").getAsString().toUpperCase(Locale.ROOT)) : MainFillOrder.FORWARD,
-                jsonObject.has("autoOpenCemetery") && jsonObject.get("autoOpenCemetery").getAsBoolean(),
-                jsonObject.has("autoCloseCemetery") && jsonObject.get("autoCloseCemetery").getAsBoolean()
+                jsonObject.has("cemetery") && jsonObject.getAsJsonObject("cemetery").has("defaultOpen") && jsonObject.getAsJsonObject("cemetery").get("defaultOpen").getAsBoolean(),
+                jsonObject.has("cemetery") && jsonObject.getAsJsonObject("cemetery").has("autoClose") && jsonObject.getAsJsonObject("cemetery").get("autoClose").getAsBoolean()
         );
     }
 
