@@ -21,19 +21,26 @@ public class Layout {
     @Nullable
     public final Group locked;
     public final Group[] preparing;
+    @Nullable
+    public final Group cemetery;
     public final boolean replaceLockedInstances;
     public MainFillOrder mainFillOrder;
+    public final boolean autoOpenCemetery;
+    public final boolean autoCloseCemetery;
 
     private Layout(@NotNull Group main) {
-        this(main, null, new Group[0], true, MainFillOrder.FORWARD);
+        this(main, null, new Group[0], null, true, MainFillOrder.FORWARD, false, false);
     }
 
-    private Layout(@NotNull Group main, @Nullable Group locked, Group[] preparing, boolean replaceLockedInstances, MainFillOrder mainFillOrder) {
+    private Layout(@NotNull Group main, @Nullable Group locked, Group[] preparing, @Nullable Group cemetery, boolean replaceLockedInstances, MainFillOrder mainFillOrder, boolean autoOpenCemetery, boolean autoCloseCemetery) {
         this.main = main;
         this.locked = locked;
         this.preparing = preparing;
+        this.cemetery = cemetery;
         this.replaceLockedInstances = replaceLockedInstances;
         this.mainFillOrder = mainFillOrder;
+        this.autoOpenCemetery = autoOpenCemetery;
+        this.autoCloseCemetery = autoCloseCemetery;
 
         if (this.main.cosmetic) {
             throw new IllegalArgumentException("Main Group may not be cosmetic!");
@@ -74,8 +81,12 @@ public class Layout {
                 Group.fromJson(jsonObject.getAsJsonObject("main"), SeedQueue.config.rows, SeedQueue.config.columns),
                 jsonObject.has("locked") ? Group.fromJson(jsonObject.getAsJsonObject("locked")) : null,
                 jsonObject.has("preparing") ? Group.fromJson(jsonObject.getAsJsonArray("preparing")) : new Group[0],
+                jsonObject.has("cemetery") ? Group.fromJson(jsonObject.getAsJsonObject("cemetery")) : null,
                 jsonObject.has("replaceLockedInstances") && jsonObject.get("replaceLockedInstances").getAsBoolean(),
-                jsonObject.has("mainFillOrder") ? MainFillOrder.valueOf(jsonObject.get("mainFillOrder").getAsString().toUpperCase(Locale.ROOT)) : MainFillOrder.FORWARD);
+                jsonObject.has("mainFillOrder") ? MainFillOrder.valueOf(jsonObject.get("mainFillOrder").getAsString().toUpperCase(Locale.ROOT)) : MainFillOrder.FORWARD,
+                jsonObject.has("cemetery") && jsonObject.getAsJsonObject("cemetery").has("autoOpen") && jsonObject.getAsJsonObject("cemetery").get("autoOpen").getAsBoolean(),
+                jsonObject.has("cemetery") && jsonObject.getAsJsonObject("cemetery").has("autoClose") && jsonObject.getAsJsonObject("cemetery").get("autoClose").getAsBoolean()
+        );
     }
 
     public static Layout createLayout() {

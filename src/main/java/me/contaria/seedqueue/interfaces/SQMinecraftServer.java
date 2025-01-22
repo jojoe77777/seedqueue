@@ -8,6 +8,9 @@ import java.util.concurrent.Executor;
 public interface SQMinecraftServer {
 
     Optional<SeedQueueEntry> seedQueue$getEntry();
+    boolean sq$kill();
+    boolean sq$discard();
+    boolean sq$revive();
 
     boolean seedQueue$inQueue();
 

@@ -13,12 +13,15 @@ import me.contaria.seedqueue.compat.WorldPreviewProperties;
 import me.contaria.seedqueue.customization.AnimatedTexture;
 import me.contaria.seedqueue.customization.Layout;
 import me.contaria.seedqueue.customization.LockTexture;
+import me.contaria.seedqueue.interfaces.SQMinecraftServer;
 import me.contaria.seedqueue.keybindings.SeedQueueKeyBindings;
 import me.contaria.seedqueue.mixin.accessor.DebugHudAccessor;
 import me.contaria.seedqueue.mixin.accessor.MinecraftClientAccessor;
+import me.contaria.seedqueue.mixin.accessor.MinecraftServerAccessor;
 import me.contaria.seedqueue.mixin.accessor.WorldRendererAccessor;
 import me.contaria.seedqueue.sounds.SeedQueueSounds;
 import me.voidxwalker.autoreset.Atum;
+import me.voidxwalker.worldpreview.interfaces.WPMinecraftServer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.hud.DebugHud;
@@ -29,9 +32,12 @@ import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Unit;
+import net.minecraft.util.math.ChunkPos;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -60,6 +66,9 @@ public class SeedQueueWallScreen extends Screen {
     @Nullable
     private List<SeedQueuePreview> lockedPreviews;
     private List<SeedQueuePreview> preparingPreviews;
+    private List<SeedQueuePreview> dyingPreviews;
+
+    private boolean cemeteryVisible;
 
     private final Set<Integer> blockedMainPositions = new HashSet<>();
 
@@ -93,6 +102,7 @@ public class SeedQueueWallScreen extends Screen {
         this.createWorldScreen = createWorldScreen;
         this.debugHud = SeedQueue.config.showDebugMenu ? new DebugHud(MinecraftClient.getInstance()) : null;
         this.preparingPreviews = new ArrayList<>();
+        this.dyingPreviews = new ArrayList<>();
         this.lastSettingsCache = this.settingsCache = SeedQueueSettingsCache.create();
     }
 
@@ -103,10 +113,17 @@ public class SeedQueueWallScreen extends Screen {
         this.mainPreviews = new SeedQueuePreview[this.layout.main.size()];
         this.lockedPreviews = this.layout.locked != null ? new ArrayList<>() : null;
         this.preparingPreviews = new ArrayList<>();
+        for (SeedQueuePreview preview : this.dyingPreviews) {
+            if(!preview.getSeedQueueEntry().isDiscarded()){
+                SeedQueue.discard(preview.getSeedQueueEntry());
+            }
+        }
+        this.dyingPreviews = new ArrayList<>();
         this.lockTextures = LockTexture.createLockTextures();
         this.background = AnimatedTexture.of(WALL_BACKGROUND);
         this.overlay = AnimatedTexture.of(WALL_OVERLAY);
         this.instanceBackground = AnimatedTexture.of(INSTANCE_BACKGROUND);
+        this.cemeteryVisible = this.layout.autoOpenCemetery;
     }
 
     protected LockTexture getLockTexture() {
@@ -146,6 +163,13 @@ public class SeedQueueWallScreen extends Screen {
             int offset = i;
             for (; i < group.size(); i++) {
                 this.renderInstance(i < this.preparingPreviews.size() ? this.preparingPreviews.get(i) : null, group, group.getPos(i - offset), matrices, delta);
+            }
+        }
+
+        if (this.cemeteryVisible && this.layout.cemetery != null && this.dyingPreviews != null) {
+            SeedQueueProfiler.swap("render_cemetery");
+            for (int j = 0; j < this.layout.cemetery.size(); j++) {
+                this.renderInstance(j < this.dyingPreviews.size() ? this.dyingPreviews.get(j) : null, this.layout.cemetery, this.layout.cemetery.getPos(j), matrices, delta);
             }
         }
 
@@ -428,11 +452,59 @@ public class SeedQueueWallScreen extends Screen {
         for (SeedQueuePreview instance: this.getInstances()) {
             entries.remove(instance.getSeedQueueEntry());
         }
+        for (SeedQueuePreview dyingInst : this.dyingPreviews) {
+            entries.remove(dyingInst.getSeedQueueEntry());
+        }
         entries.removeIf(entry -> entry.getWorldGenerationProgressTracker() == null);
         if (SeedQueue.config.waitForPreviewSetup) {
             entries.removeIf(entry -> !entry.hasWorldPreview());
         }
         return entries;
+    }
+
+    private void revive(SeedQueuePreview instance){
+        if(!this.dyingPreviews.contains(instance)){
+            SeedQueue.LOGGER.warn("Tried to revive a preview that is not dying!");
+            return;
+        }
+        SeedQueueEntry entry = instance.getSeedQueueEntry();
+        entry.setDying(false);
+        ((SQMinecraftServer) entry.getServer()).sq$revive();
+        SeedQueue.SEED_QUEUE.add(entry);
+        if(this.layout.locked == null) {
+            boolean foundSpace = false;
+            // find an empty spot in main
+            for (int i = 0; i < this.mainPreviews.length; i++) {
+                if (this.mainPreviews[i] == null) {
+                    this.mainPreviews[i] = instance;
+                    instance.getSeedQueueEntry().mainPosition = i;
+                    foundSpace = true;
+                    break;
+                }
+            }
+            if(!foundSpace) {
+                // otherwise look for non-locks
+                for (int i = 0; i < this.mainPreviews.length; i++) {
+                    SeedQueuePreview old = this.mainPreviews[i];
+                    if (old != null && !old.getSeedQueueEntry().isLocked()) {
+                        old.getSeedQueueEntry().mainPosition = -1;
+                        this.mainPreviews[i] = instance;
+                        instance.getSeedQueueEntry().mainPosition = i;
+                        foundSpace = true;
+                        break;
+                    }
+                }
+            }
+            if (!foundSpace) {
+                this.preparingPreviews.add(instance);
+            }
+        }
+        this.lockInstance(instance);
+        this.dyingPreviews.remove(instance);
+        if(this.layout.autoCloseCemetery){
+            this.cemeteryVisible = false;
+        }
+        SeedQueue.ping();
     }
 
     private void loadPreviewSettings(SeedQueuePreview instance) {
@@ -484,9 +556,20 @@ public class SeedQueueWallScreen extends Screen {
         if (SeedQueueKeyBindings.scheduleAll.matchesMouse(button)) {
             this.scheduleAll();
         }
+        if(SeedQueueKeyBindings.toggleCemetery.matchesMouse(button)){
+            this.cemeteryVisible = !this.cemeteryVisible;
+        }
 
         SeedQueuePreview instance = this.getInstance(mouseX, mouseY);
         if (instance == null) {
+            return true;
+        }
+
+        if(dyingPreviews.contains(instance)){
+            if (SeedQueueKeyBindings.lock.matchesMouse(button)) {
+                this.revive(instance);
+                this.lockInstance(instance);
+            }
             return true;
         }
 
@@ -554,6 +637,9 @@ public class SeedQueueWallScreen extends Screen {
         if (SeedQueueKeyBindings.scheduleAll.matchesKey(keyCode, scanCode)) {
             this.scheduleAll();
         }
+        if(SeedQueueKeyBindings.toggleCemetery.matchesKey(keyCode, scanCode)){
+            this.cemeteryVisible = !this.cemeteryVisible;
+        }
 
         SeedQueuePreview instance = this.getInstance(mouseX, mouseY);
         if (instance == null) {
@@ -565,6 +651,13 @@ public class SeedQueueWallScreen extends Screen {
             if (Screen.hasShiftDown()) {
                 instance.printStacktrace();
             }
+        }
+
+        if(dyingPreviews.contains(instance)){
+            if (SeedQueueKeyBindings.lock.matchesKey(keyCode, scanCode)) {
+                this.revive(instance);
+            }
+            return true;
         }
 
         if (SeedQueueKeyBindings.play.matchesKey(keyCode, scanCode)) {
@@ -592,6 +685,12 @@ public class SeedQueueWallScreen extends Screen {
         double y = mouseY * scale;
 
         // we traverse the layout in reverse to catch the top rendered instance
+        if (this.cemeteryVisible && this.layout.cemetery != null && this.dyingPreviews != null) {
+            Optional<SeedQueuePreview> instance = this.getInstance(this.layout.cemetery, x, y).filter(index -> index < this.dyingPreviews.size()).map(this.dyingPreviews::get);
+            if (instance.isPresent()) {
+                return instance.get();
+            }
+        }
         for (int i = this.layout.preparing.length - 1; i >= 0; i--) {
             Optional<SeedQueuePreview> instance = this.getInstance(this.layout.preparing[i], x, y).filter(index -> index < this.preparingPreviews.size()).map(this.preparingPreviews::get);
             if (instance.isPresent()) {
@@ -696,9 +795,35 @@ public class SeedQueueWallScreen extends Screen {
         }
 
         SeedQueueProfiler.push("reset_instance");
-        SeedQueue.discard(instance.getSeedQueueEntry());
+        SeedQueueEntry entry = instance.getSeedQueueEntry();
+        int cemeterySize = this.layout.cemetery != null ? this.layout.cemetery.size() : 0;
+        if(cemeterySize > 0){
+            entry.setDying(true);
+            entry.setWorldPreviewProperties(null);
 
-        this.scheduledEntries.remove(instance.getSeedQueueEntry());
+            ((SQMinecraftServer) entry.getServer()).sq$kill();
+            synchronized (SeedQueue.LOCK) {
+                SeedQueue.SEED_QUEUE.remove(entry);
+            }
+
+            entry.mainPosition = -1;
+            if(this.lockedPreviews != null){
+                this.lockedPreviews.remove(instance);
+            }
+            entry.unlock();
+
+            this.dyingPreviews.add(instance);
+            if(this.dyingPreviews.size() > cemeterySize) {
+                SeedQueuePreview oldest = this.dyingPreviews.remove(0);
+                ((SQMinecraftServer) oldest.getSeedQueueEntry().getServer()).sq$discard();
+                SeedQueue.discard(oldest.getSeedQueueEntry());
+            }
+            SeedQueue.ping();
+        } else {
+            SeedQueue.discard(entry);
+        }
+
+        this.scheduledEntries.remove(entry);
 
         if (playSound) {
             this.playSound(SeedQueueSounds.RESET_INSTANCE);
@@ -871,6 +996,7 @@ public class SeedQueueWallScreen extends Screen {
             for (SeedQueuePreview instance : this.getInstances()) {
                 this.removePreview(instance);
             }
+            this.dyingPreviews.clear();
         }
     }
 
@@ -977,5 +1103,15 @@ public class SeedQueueWallScreen extends Screen {
     public void removed() {
         assert this.client != null;
         this.client.getToastManager().clear();
+
+        // discard previews on wall close (which includes entering instance)
+        // this is intended behaviour, so the queue can fill fully while playing
+        // also to keep the atum reset count eventually consistent
+        for (SeedQueuePreview preview : this.dyingPreviews) {
+            if(!preview.getSeedQueueEntry().isDiscarded()){
+                SeedQueue.discard(preview.getSeedQueueEntry());
+            }
+        }
+        this.dyingPreviews.clear();
     }
 }

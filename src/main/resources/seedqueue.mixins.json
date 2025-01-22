@@ -55,7 +55,9 @@
     "server.synchronization.BiomeMixin",
     "server.synchronization.DirectionTransformationMixin",
     "server.synchronization.ScheduledTickMixin",
-    "server.synchronization.WeightedBlockStateProviderMixin"
+    "server.synchronization.WeightedBlockStateProviderMixin",
+
+    "compat.worldpreview.MinecraftServerMixin"
   ],
   "plugin": "me.contaria.seedqueue.SeedQueueMixinConfigPlugin"
 }

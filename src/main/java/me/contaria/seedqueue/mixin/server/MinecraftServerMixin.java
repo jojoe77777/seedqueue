@@ -184,7 +184,7 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
     @Override
     public boolean seedQueue$shouldPause() {
         SeedQueueEntry entry = this.seedQueue$getEntry().orElse(null);
-        if (entry == null || entry.isLoaded() || entry.isDiscarded()) {
+        if (entry == null || entry.isLoaded() || entry.isDiscarded() || entry.isDying()) {
             return false;
         }
         if (this.pauseScheduled || entry.isReady()) {

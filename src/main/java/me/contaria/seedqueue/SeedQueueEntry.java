@@ -1,5 +1,6 @@
 package me.contaria.seedqueue;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.mojang.authlib.GameProfileRepository;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
@@ -14,7 +15,10 @@ import me.contaria.seedqueue.mixin.accessor.MinecraftServerAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ChunkTicketType;
+import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.util.UserCache;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.level.storage.LevelStorage;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,6 +55,7 @@ public class SeedQueueEntry {
     private volatile boolean locked;
     private volatile boolean loaded;
     private volatile boolean discarded;
+    private volatile boolean dying;
     private volatile boolean maxWorldGenerationReached;
 
     /**
@@ -336,6 +341,20 @@ public class SeedQueueEntry {
     }
 
     /**
+     * Unlocks an entry
+     *
+     * @return True if the entry was locked before.
+     */
+    public boolean unlock() {
+        if (this.locked) {
+            this.locked = false;
+            SeedQueue.ping();
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * @see SeedQueueEntry#load
      */
     public boolean isLoaded() {
@@ -360,6 +379,14 @@ public class SeedQueueEntry {
             this.unpause();
             SeedQueueProfiler.pop();
         }
+    }
+
+    public boolean isDying() {
+        return this.dying;
+    }
+
+    public void setDying(boolean dying) {
+        this.dying = dying;
     }
 
     /**

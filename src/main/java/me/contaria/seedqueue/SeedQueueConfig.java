@@ -186,7 +186,8 @@ public class SeedQueueConfig implements SpeedrunConfig {
             SeedQueueKeyBindings.scheduleJoin,
             SeedQueueKeyBindings.scheduleAll,
             SeedQueueKeyBindings.startBenchmark,
-            SeedQueueKeyBindings.cancelBenchmark
+            SeedQueueKeyBindings.cancelBenchmark,
+            SeedQueueKeyBindings.toggleCemetery
     };
 
     {
