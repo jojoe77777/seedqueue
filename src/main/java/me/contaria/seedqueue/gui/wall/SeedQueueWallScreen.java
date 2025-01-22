@@ -13,12 +13,15 @@ import me.contaria.seedqueue.compat.WorldPreviewProperties;
 import me.contaria.seedqueue.customization.AnimatedTexture;
 import me.contaria.seedqueue.customization.Layout;
 import me.contaria.seedqueue.customization.LockTexture;
+import me.contaria.seedqueue.interfaces.SQMinecraftServer;
 import me.contaria.seedqueue.keybindings.SeedQueueKeyBindings;
 import me.contaria.seedqueue.mixin.accessor.DebugHudAccessor;
 import me.contaria.seedqueue.mixin.accessor.MinecraftClientAccessor;
+import me.contaria.seedqueue.mixin.accessor.MinecraftServerAccessor;
 import me.contaria.seedqueue.mixin.accessor.WorldRendererAccessor;
 import me.contaria.seedqueue.sounds.SeedQueueSounds;
 import me.voidxwalker.autoreset.Atum;
+import me.voidxwalker.worldpreview.interfaces.WPMinecraftServer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.hud.DebugHud;
@@ -29,9 +32,12 @@ import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Unit;
+import net.minecraft.util.math.ChunkPos;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -462,7 +468,14 @@ public class SeedQueueWallScreen extends Screen {
             SeedQueue.LOGGER.warn("Tried to revive a preview that is not dying!");
             return;
         }
-        instance.getSeedQueueEntry().setDying(false);
+        SeedQueueEntry entry = instance.getSeedQueueEntry();
+        entry.setDying(false);
+        //entry.needsRestart = true;
+        entry.killed = false;
+        ((SQMinecraftServer) entry.getServer()).sq$revive();
+        SeedQueue.SEED_QUEUE.add(entry);
+        //entry.serverChunkManager.addTicket(entry.ticketType, entry.pos, entry.radius, entry.argument);
+        //System.out.println("Adding ticket with type " + entry.ticketType + " at " + entry.pos + " with radius " + entry.radius + " and argument " + entry.argument);
         if(this.layout.locked == null) {
             boolean foundSpace = false;
             // find an empty spot in main
@@ -793,7 +806,36 @@ public class SeedQueueWallScreen extends Screen {
         int cemeterySize = this.layout.cemetery != null ? this.layout.cemetery.size() : 0;
         if(cemeterySize > 0){
             entry.setDying(true);
+            entry.killed = false;
             entry.setWorldPreviewProperties(null);
+            //System.out.println("PAUSEDEBUG Scheduling pause for " + entry.getSession().getDirectoryName() + " at " + System.currentTimeMillis());
+
+            // 60 rps
+            /*if (!ModCompat.worldpreview$kill(entry.getServer())) {
+                ModCompat.fastReset$fastReset(entry.getServer());
+                ((MinecraftServerAccessor) entry.getServer()).seedQueue$setRunning(false);
+            }*/
+
+            // 65 rps combined with above
+            //entry.discardFrameBuffer();
+
+            // up to 80 rps
+            //SeedQueue.discard(entry);
+
+            //entry.discard();
+            //synchronized (entry.getServer()) {
+                //ModCompat.worldpreview$kill(entry.getServer());
+                //entry.schedulePause();
+            //}
+
+            //83ish rps
+            //ModCompat.worldpreview$kill(entry.getServer());
+
+
+            ((SQMinecraftServer) entry.getServer()).sq$kill();
+            synchronized (SeedQueue.LOCK) {
+                SeedQueue.SEED_QUEUE.remove(entry);
+            }
 
             entry.mainPosition = -1;
             if(this.lockedPreviews != null){
@@ -804,6 +846,7 @@ public class SeedQueueWallScreen extends Screen {
             this.dyingPreviews.add(instance);
             if(this.dyingPreviews.size() > cemeterySize) {
                 SeedQueuePreview oldest = this.dyingPreviews.remove(0);
+                ((SQMinecraftServer) oldest.getSeedQueueEntry().getServer()).sq$discard();
                 SeedQueue.discard(oldest.getSeedQueueEntry());
             }
             SeedQueue.ping();

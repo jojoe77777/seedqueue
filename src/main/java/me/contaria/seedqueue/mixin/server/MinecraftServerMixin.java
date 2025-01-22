@@ -1,8 +1,11 @@
 package me.contaria.seedqueue.mixin.server;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Share;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import me.contaria.seedqueue.SeedQueue;
 import me.contaria.seedqueue.SeedQueueEntry;
 import me.contaria.seedqueue.SeedQueueExecutorWrapper;
@@ -11,7 +14,11 @@ import me.contaria.seedqueue.mixin.accessor.EntityAccessor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.ServerTask;
+import net.minecraft.server.WorldGenerationProgressListener;
+import net.minecraft.server.world.ChunkTicketType;
+import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.thread.ReentrantThreadExecutor;
 import net.minecraft.world.level.ServerWorldProperties;
 import net.minecraft.world.level.storage.LevelStorage;
@@ -134,6 +141,60 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
         this.seedQueue$tryPausingServer();
     }
 
+
+
+    /*@WrapOperation(
+            method = "prepareStartRegion",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/server/world/ServerChunkManager;addTicket(Lnet/minecraft/server/world/ChunkTicketType;Lnet/minecraft/util/math/ChunkPos;ILjava/lang/Object;)V"
+            )
+    )
+    private void captureChunkTicketInformation(ServerChunkManager chunkManager, ChunkTicketType<Object> ticketType, ChunkPos pos, int radius, Object argument, Operation<Void> original) {
+        SeedQueueEntry entry = this.seedQueue$getEntry().orElse(null);
+        if (entry == null) {
+            original.call(chunkManager, ticketType, pos, radius, argument);
+            return;
+        }
+        entry.setTicketInformation(chunkManager, ticketType, pos, radius, argument);
+        original.call(chunkManager, ticketType, pos, radius, argument);
+    }/*
+
+    @Inject(
+            method = "prepareStartRegion",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/server/world/ServerChunkManager;getTotalChunksLoadedCount()I",
+                    shift = At.Shift.AFTER
+            ),
+            cancellable = true
+    )
+    private void killWorldGen(WorldGenerationProgressListener worldGenerationProgressListener, CallbackInfo ci, @Share("removeTicket") LocalRef<Runnable> removeTicket) {
+        SeedQueueEntry entry = this.seedQueue$getEntry().orElse(null);
+        if (entry != null && entry.deadPaused) {
+            removeTicket.get().run();
+            worldGenerationProgressListener.stop();
+            ci.cancel();
+        }
+    }
+
+    @ModifyReturnValue(
+            method = "shouldKeepTicking",
+            at = @At("RETURN")
+    )
+    private boolean killRunningTasks(boolean shouldKeepTicking) {
+        SeedQueueEntry entry = this.seedQueue$getEntry().orElse(null);
+        if(entry == null){
+            return shouldKeepTicking;
+        }
+        return shouldKeepTicking && !entry.deadPaused;
+    }*/
+
+
+
+
+
+
     @Inject(
             method = "loadWorld",
             at = @At("TAIL")
@@ -184,11 +245,8 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
     @Override
     public boolean seedQueue$shouldPause() {
         SeedQueueEntry entry = this.seedQueue$getEntry().orElse(null);
-        if (entry == null || entry.isLoaded() || entry.isDiscarded()) {
+        if (entry == null || entry.isLoaded() || entry.isDiscarded() || entry.isDying()) {
             return false;
-        }
-        if(entry.isDying()){
-            return true;
         }
         if (this.pauseScheduled || entry.isReady()) {
             return true;
@@ -254,6 +312,12 @@ public abstract class MinecraftServerMixin extends ReentrantThreadExecutor<Serve
         if (this.paused) {
             this.notify();
             this.paused = false;
+            /*SeedQueueEntry entry = this.seedQueue$getEntry().orElse(null);
+            if (entry == null) {
+                return;
+            }
+            System.out.println("PAUSEDEBUG Unpausing " + entry.getSession().getDirectoryName() + " at " + System.currentTimeMillis());
+*/
         }
     }
 

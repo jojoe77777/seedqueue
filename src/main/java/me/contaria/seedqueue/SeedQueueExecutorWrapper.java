@@ -40,6 +40,7 @@ public class SeedQueueExecutorWrapper implements Executor {
 
     @Override
     public void execute(@NotNull Runnable command) {
+        //System.out.println("Executing command " + command + " with executor " + this.executor.toString());
         this.executor.execute(command);
     }
 

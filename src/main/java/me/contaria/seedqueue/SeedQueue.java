@@ -28,7 +28,7 @@ import java.util.function.Predicate;
 public class SeedQueue implements ClientModInitializer {
     public static final Logger LOGGER = LogManager.getLogger();
     private static final Version VERSION = FabricLoader.getInstance().getModContainer("seedqueue").orElseThrow(IllegalStateException::new).getMetadata().getVersion();
-    private static final Object LOCK = new Object();
+    public static final Object LOCK = new Object();
 
     public static SeedQueueConfig config;
 
@@ -36,12 +36,14 @@ public class SeedQueue implements ClientModInitializer {
 
     private static final Queue<Runnable> CLIENT_TASKS = new LinkedBlockingQueue<>();
 
-    private static final Queue<SeedQueueEntry> SEED_QUEUE = new LinkedBlockingQueue<>();
+    public static final Queue<SeedQueueEntry> SEED_QUEUE = new LinkedBlockingQueue<>();
     private static SeedQueueThread thread;
 
     public static final ThreadLocal<SeedQueueEntry> LOCAL_ENTRY = new ThreadLocal<>();
     public static SeedQueueEntry currentEntry;
     public static SeedQueueEntry selectedEntry;
+
+    public static Map<String, Long> jojoe = new HashMap<>();
 
     @Override
     public void onInitializeClient() {
@@ -117,7 +119,7 @@ public class SeedQueue implements ClientModInitializer {
         entry.discard();
         synchronized (LOCK) {
             if (!SEED_QUEUE.remove(entry)) {
-                throw new IllegalArgumentException("Tried to discard a SeedQueueEntry that is not currently in queue!");
+                //throw new IllegalArgumentException("Tried to discard a SeedQueueEntry that is not currently in queue!");
             }
         }
         ping();

@@ -57,5 +57,10 @@
     "server.synchronization.ScheduledTickMixin",
     "server.synchronization.WeightedBlockStateProviderMixin"
   ],
-  "plugin": "me.contaria.seedqueue.SeedQueueMixinConfigPlugin"
+  "plugin": "me.contaria.seedqueue.SeedQueueMixinConfigPlugin",
+  "mixins": [
+    "compat.worldpreview.MinecraftServerMixin",
+    "server.jojoe.ChunkStatusMixin",
+    "server.jojoe.ChunkTaskPrioritySystemMixin"
+  ]
 }
